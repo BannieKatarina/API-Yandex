@@ -4,14 +4,13 @@ import sys
 import requests
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel
+from PyQt5.Qt import Qt
 
 SCREEN_SIZE = [600, 450]
 
 COORDS = input().split()
 SCALE = input().split()
-PARAMS = {'ll': ','.join(COORDS),
-          'spn': ','.join(SCALE),
-          'l': 'map'}
+
 
 
 class Example(QWidget):
@@ -21,6 +20,9 @@ class Example(QWidget):
         self.initUI()
 
     def getImage(self):
+        PARAMS = {'ll': ','.join(COORDS),
+                  'spn': ','.join(map(str, SCALE)),
+                  'l': 'map'}
         map_request = "http://static-maps.yandex.ru/1.x/"
         response = requests.get(map_request, params=PARAMS)
 
@@ -38,18 +40,30 @@ class Example(QWidget):
     def initUI(self):
         self.setGeometry(100, 100, *SCREEN_SIZE)
         self.setWindowTitle('Отображение карты')
-
-        ## Изображение
-        self.pixmap = QPixmap(self.map_file)
         self.image = QLabel(self)
         self.image.move(0, 0)
         self.image.resize(600, 450)
+        self.showImage()
+
+    def showImage(self):
+        self.pixmap = QPixmap(self.map_file)
         self.image.setPixmap(self.pixmap)
         self.image.setScaledContents(True)
 
     def closeEvent(self, event):
         """При закрытии формы подчищаем за собой"""
         os.remove(self.map_file)
+
+    def keyPressEvent(self, event):
+        global SCALE
+        if event.key() == Qt.Key_PageUp:
+            SCALE = [max(float(SCALE[0]) * 0.5, 0.000125), max(float(SCALE[1]) * 0.5, 0.000125)]
+            print(SCALE)
+        if event.key() == Qt.Key_PageDown:
+            SCALE = [min(float(SCALE[0]) * 2, 0.035), min(float(SCALE[1]) * 2, 0.035)]
+            print(SCALE)
+        self.getImage()
+        self.showImage()
 
 
 if __name__ == '__main__':
